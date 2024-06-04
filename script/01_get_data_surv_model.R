@@ -3,7 +3,7 @@
 # Load in data in separate private repository: 
 # https://github.com/ahyoung-lim/Multi_arbo_mapping
 
-path = "C:/Users/AhyoungLim/Dropbox/WORK/Dengue Project 2022/ENMs/Multi_arbo_mapping/"
+path = "C:/Users/AhyoungLim/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
 
 # published datasets
 viral <- read.csv(paste0(path, "published_datasets/Shearer_background/pathogen_class_5_viral.csv"))

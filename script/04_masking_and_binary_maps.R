@@ -58,8 +58,10 @@ disease = "dengue"
 dname = ifelse(disease =="dengue", "DEN", ifelse(disease == "zika", "ZIK", ifelse(disease == "chikungunya", "CHIK", "YF")))
   
 # load 100 predictions and weights (AUC values)
-preds <- readRDS(paste0("outputs/cross_validation/", dname, "_100fold_pred.rds"))
-aucs <- readRDS(paste0("outputs/cross_validation/", dname, "_100fold_AUC.rds"))
+# saved in separate private repository 
+path = "C:/Users/AhyoungLim/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
+preds <- readRDS(paste0(path, "cross_validation/", dname, "_100fold_pred.rds"))
+aucs <- readRDS(paste0(path, "cross_validation/", dname, "_100fold_AUC.rds"))
   
 auc = unlist(aucs)
 weights = auc / sum(auc)

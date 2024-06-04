@@ -5,12 +5,15 @@
 # ==========================================================
 
 source("script/00_setup.R")
+source("script/01_get_covariates.R")
+# load in covariate rasters 
+surv_cov_list <- loadRasters("surv")[[1]]
 
 # load in intermediate dataset
 dat <- readRDS("data/intermediate_datasets/Surv_model_fit_data.rds")
 
 # names of covariates
-surv_cov_names <- c("GDP", "GDP_national", "Urban", "Acc_walk", "Acc_city", "Trmt", "U5M", "GovEff",      "Physician")
+surv_cov_names <- c("GDP", "GDP_national", "Urban", "Acc_walk", "Acc_city", "Trmt", "U5M", "GovEff", "Physician")
 
 
 # plain vanilla RF model
@@ -18,9 +21,10 @@ surv_cov_names <- c("GDP", "GDP_national", "Urban", "Acc_walk", "Acc_city", "Trm
 #                    cov_names = surv_cov_names) # returns an RF model object
 
 
-# load in a prediction dataframe
+# make prediction data frame
 # a standardised set of covariates (5 km x 5 km global scale)
-pred.data <- readRDS("data/intermediate_datasets/Surv_model_pred_data.rds")
+pred.data <- as.data.frame(surv_cov_list, xy=T) 
+rm("surv_cov_list"); gc()
 
 # create an NA index
 NAindex = which(!complete.cases(pred.data[, surv_cov_names]))
@@ -78,8 +82,8 @@ registerDoParallel(cl)
 v_pred_out <- Predout(v_CV, pred=TRUE) # returns a dataframe with N predictions and their weighted average and IQR
 stopCluster(cl)
 
-saveRDS(v_pred_out$pred, file = paste0("outputs/cross_validation/Surv_", nfolds, "fold_pred.rds"))
-saveRDS(v_pred_out$AUC, file = paste0("outputs/cross_validation/Surv_", nfolds, "fold_AUC.rds"))
+# saveRDS(v_pred_out$pred, file = paste0("outputs/cross_validation/Surv_", nfolds, "fold_pred.rds"))
+# saveRDS(v_pred_out$AUC, file = paste0("outputs/cross_validation/Surv_", nfolds, "fold_AUC.rds"))
 
 # save figures and rasters in a local directory and return weighted mean raster only
 surv_rast <- saveRasPlot(v_pred_out$pred, "Surv", color_opt = "viridis", color_direction = 1)

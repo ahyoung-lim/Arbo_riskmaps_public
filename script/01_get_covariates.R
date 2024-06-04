@@ -1,7 +1,7 @@
 # Load in covariate rasters ================================
 # in separate private repository: 
 # https://github.com/ahyoung-lim/Multi_arbo_mapping
-path = "C:/Users/AhyoungLim/Dropbox/WORK/Dengue Project 2022/ENMs/Multi_arbo_mapping/"
+path = "C:/Users/AhyoungLim/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
 
 # function for scaling and centring covariate raster data
 # includes (default) option for first zero inflating and log transforming

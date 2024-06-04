@@ -5,6 +5,9 @@
 # ==========================================================
 
 source("script/00_setup.R")
+source("script/01_get_covariates.R")
+# load in covariate rasters 
+arbo_cov_list <- loadRasters("arbo")[[1]]
 
 # load in intermediate dataset
 # this includes predictions from the surveillance capability model
@@ -35,8 +38,10 @@ yf_term_names <- c("Tsuit", "Tcold", "PRCP", "NDVI", "DHI", "Aegypti",
 #                  importance = TRUE)
 
 
-# load in a prediction dataframe
-pred.data <- readRDS("data/intermediate_datasets/Arbo_model_pred_data.rds")
+# make prediction data frame
+# a standardised set of covariates (5 km x 5 km global scale)
+pred.data <- as.data.frame(arbo_cov_list, xy=T) 
+rm("arbo_cov_list"); gc()
 
 # create an NA index
 all_cols = names(pred.data)
@@ -66,6 +71,7 @@ arboCV_splits <- CV_data(arbo_bList, nfolds = nfolds)
 # CV and prediction for dengue, zika, and chikungunya
 pred_rast <- list() # to store prediction rasters
 disease <- "dengue"
+
 tic(); Sys.time() # get start time
 pred.data.small_arbo$disease <- factor("dengue", levels = levels(arbo_dat$disease))
 
@@ -106,9 +112,14 @@ if (pred) {
                  ifelse(disease == "zika", "ZIK", 
                         ifelse(disease == "chikungunya", "CHIK", "YF")))
   
+  # save 100 predictions and weights
+  # saveRDS(Pred_out$pred, file = paste0("outputs/cross_validation/", dname, "_", nfolds, "fold_pred.rds"))
+  # saveRDS(Pred_out$AUC, file = paste0("outputs/cross_validation/", dname, "_", nfolds, "fold_AUC.rds"))
+  
   pred_rast[[disease]] <- saveRasPlot(Pred_out$pred, dname, color_opt = "rocket", color_direction = -1) 
 }
-  
+
+
 stopCluster(cl)
 gc()
 
@@ -143,6 +154,10 @@ registerDoParallel(cl)
 
 # to aggregate results across different folds
 yf_pred_out <-  Predout(yf_CV, pred=TRUE) 
+
+# save 100 predictions and weights
+# saveRDS(yf_pred_out$pred, file = paste0("outputs/cross_validation/YF_, nfolds, "fold_pred.rds"))
+# saveRDS(yf_pred_out$AUC, file = paste0("outputs/cross_validation/YF_, nfolds, "fold_AUC.rds"))
 
 # save plots and rasters in a local directory and return weighted mean raster only
 saveRasPlot(yf_pred_out$pred, "YF", color_opt = "rocket", color_direction = -1)

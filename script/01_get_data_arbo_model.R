@@ -2,7 +2,7 @@
 
 # Load in data in separate private repository: 
 # https://github.com/ahyoung-lim/Multi_arbo_mapping
-path = "C:/Users/AhyoungLim/Dropbox/WORK/Dengue Project 2022/ENMs/Multi_arbo_mapping/"
+path = "C:/Users/AhyoungLim/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
 
 # Occurrence (for different arboviral diseases) ===========
 # Dengue --------------------------------------------------
