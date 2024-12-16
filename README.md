@@ -11,7 +11,7 @@ This code was developed and tested using:
 
 ### Software Dependencies
 
-Ensure the following R packages are installed: `pacman (v0.5.1)`, `doParallel` (v1.0.17), `foreach` (v1.5.2), `pdp` (v0.8.1), `matrixStats` (v1.3.0), `Metrics` (v0.1.4), `cutpointr` (v1.1.2), `boot` (v1.3-28.1), `blockCV` (v3.1-3), `rsample` (v1.2.0), `randomForest` (v4.7-1.1), `terra` (v1.7-29), `rnaturalearth` (v0.3.4), `raster` (v3.6-23), `sp` (v1.6-0), `exactextractr` (v0.9.1), `sf` (v1.0-14), `tidyterra` (v0.5.2), `countrycode` (v1.5.0), `dplyr` (v1.1.2), `data.table` (v1.14.8). 
+Ensure the following R packages are installed: `pacman` (v0.5.1), `doParallel` (v1.0.17), `foreach` (v1.5.2), `pdp` (v0.8.1), `matrixStats` (v1.3.0), `Metrics` (v0.1.4), `cutpointr` (v1.1.2), `boot` (v1.3-28.1), `blockCV` (v3.1-3), `rsample` (v1.2.0), `randomForest` (v4.7-1.1), `terra` (v1.7-29), `rnaturalearth` (v0.3.4), `raster` (v3.6-23), `sp` (v1.6-0), `exactextractr` (v0.9.1), `sf` (v1.0-14), `tidyterra` (v0.5.2), `countrycode` (v1.5.0), `dplyr` (v1.1.2), `data.table` (v1.14.8). 
 
 ### Non-Standard Hardware
 
@@ -39,9 +39,7 @@ No special hardware requirements beyond a standard computer with sufficient RAM 
         # spatial data
         "sf", "mapview", "exactextractr", "raster", "rnaturalearth", "terra", 
         # modelling 
-        "randomForest", "rsample", "blockCV", 
-        "boot", "cutpointr", 
-        "Metrics", "pROC", "ROCR", "matrixStats", "pdp",
+        "randomForest", "rsample", "blockCV", "boot", "cutpointr", "Metrics", "pROC", "ROCR", "matrixStats", "pdp",
         # programming 
         "here", "tictoc", "doParallel"
       ) 
@@ -59,7 +57,8 @@ The repository is organized into the following main folders:
 - **`data/`**: Contains datasets used in the analysis, subdivided into:
   - **`admin_rasters/`**: Rasters and shapefiles for global administrative boundaries.
   - **`covariate_rasters/`**: Rasters for global dengue temperature suitability, population density, and a mask layer for yellow fever transmission. See Methods and Supplementary Information for data sources.
-  - **`intermediate_datasets/`**: Cleaned and standardized occurrence datasets for viral and arboviral diseases. See cited sources for original datasets. This folder also contains several intermediate datasets that are used at various stages of the analysis. 
+  - **`intermediate_datasets/`**: Cleaned and thinned occurrence datasets for viral and arboviral diseases. See cited sources for original datasets. This folder also contains several intermediate datasets that are used at various stages of the analysis.
+  - **`raw_arbo_occ_data/`**: Cleaned and unthinned occurrence datasets for each of arboviral diseases. 
 
 - **`functions/`**: Contains custom R code used in various stages of the analysis. Load these functions into your R script before use.
 
@@ -72,7 +71,7 @@ The repository is organized into the following main folders:
   - `06_visualisations.R`, `07_supplementary_figs.R`: Generates main and supplementary figures.
 
 - **`outputs/`**: Contains outputs obtained from the analyses, subdivided into:
-  - **`Cross_validation/`**: Contains out-of-bag predictions, model diagnostics, and sensitivity analysis results.
+  - **`cross_validation/`**: Contains out-of-bag predictions, model diagnostics, and sensitivity analysis results.
   - **`Tables/`**: Contains tables obtained from the analysis.
   - **`Figures/`**: Contains all main and supplementary figures in the manuscript.
   - **`Rasters/`**: Contains all rasters obtained from analysis and used to create figures in the manuscript.
