@@ -1,7 +1,6 @@
 # Load in covariate rasters ================================
 # in separate private repository: 
 # https://github.com/ahyoung-lim/Multi_arbo_mapping
-path = "C:/Users/AhyoungLim/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
 
 # function for scaling and centring covariate raster data
 # includes (default) option for first zero inflating and log transforming
@@ -65,9 +64,9 @@ loadRasters <- function(type) {
                            )
   
   # always load the latest surveillance capability raster together
-  surv_rast_name <- list.files(paste0(path, "Maps_and_plots/Rasters"), pattern = "Surveillance_map_100pred_wmean.*.tif", full.names = FALSE)[which.max(file.info(list.files(paste0(path, "Maps_and_plots/Rasters"), pattern = "Surveillance_map_100pred_wmean.*.tif", full.names = TRUE))$mtime)]
+  surv_rast_name <- list.files(paste0(here(), "/outputs/Rasters"), pattern = "Surveillance_map_wmean.*.tif", full.names = FALSE)[which.max(file.info(list.files(paste0(here(), "/outputs/Rasters/"), pattern = "Surveillance_map_wmean.*.tif", full.names = TRUE))$mtime)]
   
-  bootsRas_Surv <- raster(paste0(path, "Maps_and_plots/Rasters/", surv_rast_name))
+  bootsRas_Surv <- raster(paste0("outputs/Rasters/", surv_rast_name))
   
   arbo_cov_list <- setNames(addLayer(arbo_cov_list, bootsRas_Surv), c(names(arbo_cov_list), "Surv"))
   

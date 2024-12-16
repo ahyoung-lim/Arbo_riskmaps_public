@@ -51,7 +51,15 @@ rm(dt, rne, not_standard, standard)
 world <- rnaturalearth::ne_countries(scale =10 , type= "countries", returnclass = "sf") %>%
   select(continent, sovereignt, geounit, adm0_a3, iso_a3)%>%
   merge(., rne_countries, by=c("sovereignt"), all.x=T, all.y=T)%>%
-  filter(!sovereignt == "Antartica")%>%
+  filter(!sovereignt == "Antartica")
+
+world$standard_sovereignt[world$standard_sovereignt == "Taiwan"] <- "China"
+world$standard_sovereignt[world$standard_sovereignt == "Kosovo"] <- "Serbia"
+world$standard_sovereignt[world$standard_sovereignt == "Somaliland"] <- "Somalia"
+world$standard_sovereignt[world$standard_sovereignt == "Kashmir"] <- "India"
+world$standard_sovereignt[world$standard_sovereignt == "Vatican"] <- "Italy"
+
+world <- world %>%
   filter(standard_sovereignt %in% dt_un$un.name.en)
 
 world$continent[world$geounit == "Reunion"] <- "Africa"

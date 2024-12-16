@@ -1,4 +1,5 @@
 # Load occurrence data for arbovirus model ================
+source("script/00_setup.R")
 
 # Load in data in separate private repository: 
 # https://github.com/ahyoung-lim/Multi_arbo_mapping
@@ -7,7 +8,7 @@ path = "C:/Users/AhyoungLim/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
 # Occurrence (for different arboviral diseases) ===========
 # Dengue --------------------------------------------------
 
-# published datasets
+# published datasets 
 # NB dengue occurrence dataset is make up of both points and polygons in separate files
 den_pt <- read.csv(paste0(path, "published_datasets/DENV_Messina/Occurrence_points_standard_checkedEC.csv"))
 den_py <- read.csv(paste0(path, "published_datasets/DENV_Messina/Occurrence_poly_standard_checkedEC.csv"))
@@ -110,6 +111,11 @@ yf$disease <- "yf"
 chik$disease <- "chik"
 zik$disease <- "zik"
 
+# write.csv(den, "data/raw_arbo_occ_data/den_occ.csv", row.names=F)
+# write.csv(chik, "data/raw_arbo_occ_data/chik_occ.csv", row.names=F)
+# write.csv(zik, "data/raw_arbo_occ_data/zik_occ.csv", row.names=F)
+# write.csv(yf, "data/raw_arbo_occ_data/yf_occ.csv", row.names=F)
+
 rm(chik_bra, chik_dmmg, chik_who, chik_hm, chik_supp, den_supp, den_hm, den_pt, den_py, den_who, yf_hm,yf_who, yf_supp, zik_dmmg, zik_hm)
 
 
@@ -187,7 +193,7 @@ nrow(arbo_occ)
 # 
 # gc()
 # 
-# saveRDS(arbo_dat, file = paste0("data/intermediate_datasets/Arbo_model_fit_dat.rds"))
-# saveRDS(yf_dat, file = paste0("data/intermediate_datasets/YF_model_fit_dat.rds"))
+# saveRDS(arbo_dat, file = paste0("data/intermediate_datasets/Arbo_model_fit_data.rds"))
+# saveRDS(yf_dat, file = paste0("data/intermediate_datasets/YF_model_fit_data.rds"))
 
 

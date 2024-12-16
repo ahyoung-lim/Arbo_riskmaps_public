@@ -135,7 +135,7 @@ CV_data <- function(bList, nfolds){
 }
 
 # for CV and weighted predictions
-fit_mod <- function(CV_train, CV_test, cov_names, pred_data_parallel, disease_name, pred=TRUE, oob=TRUE) {
+fit_mod <- function(CV_train, CV_test, cov_names, pred_data_parallel, pred=TRUE, oob=TRUE) {
   
   if (pred) { 
   set.seed(1239023)  
@@ -188,6 +188,66 @@ fit_mod <- function(CV_train, CV_test, cov_names, pred_data_parallel, disease_na
   } 
  
 }
+
+# for traditional CV
+fit_mod_randomCV <- function(CV_train, CV_test, cov_names, pred_data_parallel, pred=TRUE, oob=TRUE) {
+  
+  if (pred) { 
+  set.seed(1239023)  
+  # train the model on nfolds-1/nfolds
+  mod <- RF_mod(CV_train, cov_names, importance = FALSE)
+  
+  testSetCopy <- as.data.frame(CV_test[,c("Longitude", "Latitude", "PA", "disease")]) 
+  
+  # test the model on held-out dataset 
+  OOB_pred <- as.data.frame(predict(mod, CV_test, type="prob")[,2])
+  names(OOB_pred)[1] <- "pred"
+  
+  OOB <- cbind(OOB_pred, testSetCopy)
+
+  # save the model performance 
+  AUC = Metrics::auc(OOB$PA, OOB$pred)
+ 
+  # make predictions to new data
+  mod_prediction <- predict(mod, pred_data_parallel, type = "prob")
+  
+  if (oob){
+  List <- list("OOB" = OOB,
+               "pred" = mod_prediction[,2],
+               "AUC" = AUC)
+  } else { 
+  List <- list("pred" = mod_prediction[,2],
+                "AUC" = AUC)
+           }
+           
+  return(List)
+  
+  } else { 
+    # train the model on nfolds-1/nfolds
+    mod <- RF_mod(CV_train, cov_names)
+    
+    testSetCopy <- as.data.frame(CV_test[,c("Longitude", "Latitude", "PA", "disease")]) 
+    # test the model on held-out dataset 
+    OOB_pred <- as.data.frame(predict(mod, CV_test, type="prob")[,2])
+    names(OOB_pred)[1] <- "pred"
+    
+    OOB_pred_classes <- as.data.frame(predict(mod, CV_test))
+    names(OOB_pred_classes)[1] <- "pred_classes"
+
+    OOB <- cbind(OOB_pred, testSetCopy)
+    OOB <- cbind(OOB, OOB_pred_classes)
+    
+    # save the model performance 
+    AUC = Metrics::auc(OOB$PA, OOB$pred)
+     
+    List <- list("OOB" = OOB,
+                 "AUC" = AUC)
+   return(List)
+  
+  } 
+ 
+}
+
 
 fit_mod_surv <- function(CV_train, CV_test, cov_names, pred_data_parallel, pred=TRUE, oob=TRUE) {
   if (pred) { 

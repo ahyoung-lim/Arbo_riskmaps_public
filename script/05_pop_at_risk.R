@@ -50,29 +50,29 @@ world$yf_lwr_pop <- exact_extract(yf_lwr_pop, world, "sum")
 world$yf_upr_pop <- exact_extract(yf_upr_pop, world, "sum") 
 
 # percentage of population at risk of dengue, chikungunya, and zika 
-sum(values(dcz_risk_pop), na.rm = TRUE)/ sum(values(pop), na.rm=T) # 0.734476
+sum(values(dcz_risk_pop), na.rm = TRUE)/ sum(values(pop), na.rm=T) # 0.7299796
 
 # Pop at risk by continent
 global <- 
   data.frame(
   continent = "Global",
-  dcz = round(sum(values(dcz_risk_pop), na.rm = TRUE) * 0.000000001, 2),
-  dcz_lwr = round(sum(values(dcz_lwr_pop), na.rm = TRUE) * 0.000000001, 2),
-  dcz_upr = round(sum(values(dcz_upr_pop), na.rm = TRUE) * 0.000000001, 2),
-  yf = round(sum(values(yf_risk_pop), na.rm = TRUE) * 0.000000001, 2),
-  yf_lwr = round(sum(values(yf_lwr_pop), na.rm = TRUE) * 0.000000001, 2),
-  yf_upr = round(sum(values(yf_upr_pop), na.rm = TRUE) * 0.000000001, 2)
+  dcz = round(sum(values(dcz_risk_pop), na.rm = TRUE) * 1e-9, 2),
+  dcz_lwr = round(sum(values(dcz_lwr_pop), na.rm = TRUE) * 1e-9, 2),
+  dcz_upr = round(sum(values(dcz_upr_pop), na.rm = TRUE) * 1e-9, 2),
+  yf = round(sum(values(yf_risk_pop), na.rm = TRUE) * 1e-9, 2),
+  yf_lwr = round(sum(values(yf_lwr_pop), na.rm = TRUE) * 1e-9, 2),
+  yf_upr = round(sum(values(yf_upr_pop), na.rm = TRUE) * 1e-9, 2)
 )
 
 continent <- world %>%
   st_drop_geometry()%>%
   group_by(continent)%>%
-  summarise(dcz = round(sum(dcz_risk_pop, na.rm=T)*0.000000001,2), 
-            dcz_lwr = round(sum(dcz_lwr_pop, na.rm=T)*0.000000001,2),
-            dcz_upr = round(sum(dcz_upr_pop, na.rm=T)*0.000000001,2),
-            yf = round(sum(yf_risk_pop, na.rm=T)*0.000000001,2),
-            yf_lwr = round(sum(yf_lwr_pop, na.rm=T)*0.000000001,2),
-            yf_upr = round(sum(yf_upr_pop, na.rm=T)*0.000000001,2)
+  summarise(dcz = round(sum(dcz_risk_pop, na.rm=T)*1e-9,2), 
+            dcz_lwr = round(sum(dcz_lwr_pop, na.rm=T)*1e-9,2),
+            dcz_upr = round(sum(dcz_upr_pop, na.rm=T)*1e-9,2),
+            yf = round(sum(yf_risk_pop, na.rm=T)*1e-9,2),
+            yf_lwr = round(sum(yf_lwr_pop, na.rm=T)*1e-9,2),
+            yf_upr = round(sum(yf_upr_pop, na.rm=T)*1e-9,2)
             
             )
 
@@ -115,10 +115,6 @@ country_at_risk <- world %>%
             Surv_wm = tot_Surv/tot_pop)
 
 
-world %>%
-  st_drop_geometry() %>%
-  group_by(continent, standard_sovereignt)%>% 
-  tally() %>% arrange(desc(n))
 
 # Number of countries at risk
 # def: >10% of total population at-risk
@@ -128,18 +124,18 @@ country_at_risk %>% filter(prop_yf > 0.1) # 54
 # formatting table
 table2 <- country_at_risk %>%
   mutate(
-    surv_wm = as.numeric(format(round(Surv_wm, 3), nsmall=3)),
-    tot_pop = as.numeric(format(round(tot_pop*0.000001, 3), nsmall=3)),
-    pop_dcz = as.numeric(format(round(sum_dcz_risk_pop*0.0000001, 3), nsmall=3)),
-    pop_dcz_lwr = as.numeric(format(round(sum_dcz_lwr_pop*0.0000001, 3), nsmall=3)),
-    pop_dcz_upr = as.numeric(format(round(sum_dcz_upr_pop*0.0000001, 3), nsmall=3)),
+    surv_wm = as.numeric(format(round(Surv_wm, 3), nsmall=3, trim = FALSE)),
+    tot_pop = as.numeric(format(round(tot_pop*1e-6, 3), nsmall=3, trim = FALSE)),
+    pop_dcz = as.numeric(format(round(sum_dcz_risk_pop*1e-6, 3), nsmall=3, trim = FALSE)),
+    pop_dcz_lwr = as.numeric(format(round(sum_dcz_lwr_pop*1e-6, 3), nsmall=3, trim = FALSE)),
+    pop_dcz_upr = as.numeric(format(round(sum_dcz_upr_pop*1e-6, 3), nsmall=3, trim = FALSE)),
     
-    pop_yf = as.numeric(format(round(sum_yf_risk_pop*0.0000001, 3), nsmall=3)), 
-    pop_yf_lwr = as.numeric(format(round(sum_yf_lwr_pop*0.0000001, 3), nsmall=3)), 
-    pop_yf_upr = as.numeric(format(round(sum_yf_upr_pop*0.0000001, 3), nsmall=3)), 
+    pop_yf = as.numeric(format(round(sum_yf_risk_pop*1e-6, 3), nsmall=3, trim = FALSE)), 
+    pop_yf_lwr = as.numeric(format(round(sum_yf_lwr_pop*1e-6, 3), nsmall=3, trim = FALSE)), 
+    pop_yf_upr = as.numeric(format(round(sum_yf_upr_pop*1e-6, 3), nsmall=3, trim = FALSE)), 
     
-    prop_dcz = as.numeric(format(round(prop_dcz,3), nsmall=3)),
-    prop_yf = as.numeric(format(round(prop_yf, 3), nsmall=3))
+    prop_dcz = as.numeric(format(round(prop_dcz,3), nsmall=3, trim = FALSE)),
+    prop_yf = as.numeric(format(round(prop_yf, 3), nsmall=3, trim = FALSE))
   )%>%
   select( standard_sovereignt, surv_wm, tot_pop, pop_dcz:pop_yf_upr)
 

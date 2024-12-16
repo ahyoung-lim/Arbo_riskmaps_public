@@ -51,48 +51,123 @@ writeRaster(dcz_range,  filename="outputs/Rasters/DCZ_riskmap_wmean_masked.tif",
 
 # Calculating 95% confidence interval ======================
 
+path = "C:/Users/user/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
+
+source("script/01_get_covariates.R")
+# load in covariate rasters 
+arbo_cov_list <- loadRasters("arbo")[[1]]
+# make prediction data frame
+# a standardised set of covariates (5 km x 5 km global scale)
+pred.data <- as.data.frame(arbo_cov_list, xy=T) 
+rm("arbo_cov_list"); gc()
+
+
 ncpus=ncpus-2
+disease_names = c("dengue", "chikungunya", "zika", "yf")
 
-disease = "dengue"
-
-dname = ifelse(disease =="dengue", "DEN", ifelse(disease == "zika", "ZIK", ifelse(disease == "chikungunya", "CHIK", "YF")))
+lapply(1:4, function(i){
+  disease = disease_names[i]
+  dname = ifelse(disease =="dengue", "DEN", ifelse(disease == "zika", "ZIK", ifelse(disease == "chikungunya", "CHIK", "YF")))
   
-# load 100 predictions and weights (AUC values)
-# saved in separate private repository 
-path = "C:/Users/AhyoungLim/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
-preds <- readRDS(paste0(path, "cross_validation/", dname, "_100fold_pred.rds"))
-aucs <- readRDS(paste0(path, "cross_validation/", dname, "_100fold_AUC.rds"))
+  # load 100 predictions and weights (AUC values)
+  # saved in separate private repository 
+  preds <- readRDS(paste0(path, "cross_validation/", dname, "_100fold_pred.rds"))
+  aucs <- readRDS(paste0(path, "cross_validation/", dname, "_100fold_AUC.rds"))
   
-auc = unlist(aucs)
-weights = auc / sum(auc)
-
-# reduced size preds
-NAindex = which(rowSums(is.na(preds[, !colnames(preds) %in% c("wmean", "median", "IQR")])) == 100)
-pred_small <- preds[-NAindex,] %>% select(X1:X100)
-
-
-# register parallel backend
-cl <- makeCluster(ncpus) 
-registerDoParallel(cl) 
-set.seed(1259)
-
-# calculate row-wise confidence intervals
-tic(); wpreds <- rowCIs(pred_small, weights, 1000); toc()
-stopCluster(cl); gc()
-
-preds$lwr <- NA
-preds$upr <- NA
-
-preds[-NAindex, "lwr"] <- wpreds[,1]
-preds[-NAindex, "upr"] <- wpreds[,2]
-
-# save outputs
-writeRaster(bootsRas(preds, "lwr"), filename=paste0("outputs/Rasters/", dname, "riskmap_lwr_masked", overwrite=T))
-writeRaster(bootsRas(preds, "upr"), filename=paste0("outputs/Rasters/", dname, "riskmap_upr_masked", overwrite=T))
-
+  # preds <- readRDS(paste0("outputs/cross_validation/", dname, "_100fold_pred.rds"))
+  # aucs <- readRDS(paste0("outputs/cross_validation/", dname, "_100fold_AUC.rds"))
+    
+  auc = unlist(aucs)
+  weights = auc / sum(auc)
+  
+  # reduced size preds
+  NAindex = which(rowSums(is.na(preds[, !colnames(preds) %in% c("wmean", "median", "IQR")])) == 100)
+  pred_small <- preds[-NAindex,] %>% select(X1:X100)
+  
+  
+  # register parallel backend
+  cl <- makeCluster(ncpus) 
+  registerDoParallel(cl) 
+  set.seed(1259)
+  
+  # calculate row-wise confidence intervals
+  tic(); wpreds <- rowCIs(pred_small, weights, 1000); toc()
+  stopCluster(cl); gc()
+  
+  preds$lwr <- NA
+  preds$upr <- NA
+  
+  preds[-NAindex, "lwr"] <- wpreds[,1]
+  preds[-NAindex, "upr"] <- wpreds[,2]
+  
+  # save outputs
+  writeRaster(bootsRas(preds, "lwr"), filename=paste0("outputs/Rasters/", dname, "_riskmap_lwr_masked.tif"), overwrite=T)
+  writeRaster(bootsRas(preds, "upr"), filename=paste0("outputs/Rasters/", dname, "_riskmap_upr_masked.tif"), overwrite=T)
+  rm(preds, aucs, NAindex, pred_small, wpreds); gc()
+})
 
 
 # Binary maps ==============================================
+# load in rasters
+DEN_ex <- raster(paste0(path, "published_datasets/DENV_Messina/dengue_2015_mean_mask.gri"))
+CHIK_ex <- raster(paste0(path, "published_datasets/CHIKV_Nsoesie/CHIKV_prediction_map_Kraemer.tif"))
+ZIK_ex <- raster(paste0(path, "published_datasets/ZIKV_Messina/ZIKV_prediction_map_Messina.tif"))
+YF_ex <- raster(paste0(path, "published_datasets/YFV_Shearer/prediction_who_extent_.tif"))
+
+DEN_range_mask <- raster("outputs/Rasters/DEN_riskmap_wmean_masked.tif")
+CHIK_range_mask <- raster("outputs/Rasters/CHIK_riskmap_wmean_masked.tif")
+ZIK_range_mask <- raster("outputs/Rasters/ZIK_riskmap_wmean_masked.tif")
+YF_range_mask <- raster("outputs/Rasters/YF_riskmap_wmean_masked.tif")
+
+crs(ZIK_ex) <- "+proj=longlat +datum=WGS84 +no_defs"
+
+DEN_ex <- crop(DEN_ex, DEN_range_mask)
+CHIK_ex <- crop(CHIK_ex, DEN_range_mask)
+ZIK_ex <- crop(ZIK_ex, DEN_range_mask)
+
+# adding back in GAUL code to the original arbovirus occurrence points
+# thinning separately on each arboviral disease
+source("script/01_get_data_arbo_model.R")
+
+cnames <- c("Longitude", "Latitude", "Admin", "disease")
+arbo_occ <- rbind(den[, cnames],
+                  chik[, cnames],
+                  zik[, cnames],
+                  yf[, cnames])
+
+
+# random background point generation
+set.seed(1221)
+arbo_bg <- thin_bg_arbo(arbo_occ)
+nrow(arbo_bg)#[1] 13127
+
+# combining presence and background
+arbo_pres <- rbind(arbo_occ,
+                   data.frame(arbo_bg[, c("Longitude", "Latitude", "disease")],
+                              Admin = -999))
+arbo_pres$PA <- as.factor(c(rep(1, nrow(arbo_occ)), rep(0, nrow(arbo_bg))))
+
+points_locs <- data.frame(a0 = extract(admin$ad0, arbo_pres[, c("Longitude", "Latitude")]),
+                          a1 = extract(admin$ad1, arbo_pres[, c("Longitude", "Latitude")]),
+                          a2 = extract(admin$ad2, arbo_pres[, c("Longitude", "Latitude")]))
+points_locs = points_locs[(arbo_pres$Admin != -999), ]
+arbo_pres$GAUL = NA
+arbo_pres$Admin <- as.numeric(arbo_pres$Admin)
+v = cbind(1:nrow(points_locs),
+          (arbo_pres$Admin[(arbo_pres$Admin != -999)] + 1))
+arbo_pres$GAUL[(arbo_pres$Admin != -999)] = points_locs[v]
+
+# Extract map values based occ+bg points
+den_pres <- mapExtract(arbo_pres, "dengue", "DEN" )
+chik_pres <- mapExtract(arbo_pres, "chik", "CHIK")
+zik_pres <- mapExtract(arbo_pres, "zik", "ZIK")
+yf_pres <- mapExtract(arbo_pres, "yf", "YF")
+
+saveRDS(den_pres, paste0("data/intermediate_datasets/DEN_occ_map_extract.rds"))
+saveRDS(chik_pres, paste0("data/intermediate_datasets/CHIK_occ_map_extract.rds"))
+saveRDS(zik_pres, paste0("data/intermediate_datasets/ZIK_occ_map_extract.rds"))
+saveRDS(yf_pres, paste0("data/intermediate_datasets/YF_occ_map_extract.rds"))
+
 # load in datasets
 # previously published map and new map values were extracted based occ+bg points 
 den_pres <- readRDS("data/intermediate_datasets/DEN_occ_map_extract.rds")
@@ -115,6 +190,23 @@ writeRaster(dcz_bin, "outputs/Rasters/DCZ_binmap_mean.tif", overwrite=T)
 writeRaster(yf_bin, "outputs/Rasters/YF_binmap_mean.tif", overwrite=T)
 
 
+summary(values(den_bin))
+summary(values(chik_bin))
+summary(values(zik_bin))
+summary(values(dcz_bin))
+
+# save binary rasters for previously published maps - for public uses
+den_past <- mapROC(den_pres, "DEN", "past_only")
+zik_past <- mapROC(zik_pres, "ZIK", "past_only")
+chik_past <- mapROC(chik_pres, "CHIK", "past_only")
+yf_past <- mapROC(yf_pres, "YF", "past_only")
+
+writeRaster(den_past, "data/intermediate_datasets/DEN_previous_binrast.tif", overwrite=T)
+writeRaster(zik_past, "data/intermediate_datasets/ZIK_previous_binrast.tif", overwrite=T)
+writeRaster(chik_past, "data/intermediate_datasets/CHIK_previous_binrast.tif", overwrite=T)
+writeRaster(yf_past, "data/intermediate_datasets/YF_previous_binrast.tif", overwrite=T)
+
+
 # convert lower and upper bound rasters into binary maps
 disease_names <- c("DEN", "CHIK", "ZIK", "YF")
 masked_lwr <- stack(); masked_upr <- stack(); dcz_lwr_bin <- stack(); dcz_upr_bin <- stack()
@@ -122,8 +214,8 @@ masked_lwr <- stack(); masked_upr <- stack(); dcz_lwr_bin <- stack(); dcz_upr_bi
 # Loop through each disease
 for (disease in disease_names) {
   # Read in the raster files
-  lwr <- raster(paste0("outputs/Rasters/", disease, "_binmap_lwr.tif"))
-  upr <- raster(paste0("outputs/Rasters/", disease, "_binmap_upr.tif"))
+  lwr <- raster(paste0("outputs/Rasters/", disease, "_riskmap_lwr_masked.tif"))
+  upr <- raster(paste0("outputs/Rasters/", disease, "_riskmap_upr_masked.tif"))
   
   if(disease == "YF") { mask <-  mask_yf } else { mask <- mask_ts }
   pres <- get(paste0(tolower(disease), "_pres"))

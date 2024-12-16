@@ -85,6 +85,7 @@ plotFRaster <- function(raster) {
   
 }
 
+today = gsub("-", "_", Sys.Date())
 # to save plots and rasters 
 saveRasPlot <- function(df, disease, color_opt, color_direction) { 
   
@@ -96,12 +97,12 @@ saveRasPlot <- function(df, disease, color_opt, color_direction) {
   
   if (!disease == "Surv") {
     name = "_riskmap_"
-    writeRaster(bootsRas2,  filename=paste0("outputs/Rasters/", disease, name, "IQR_unmasked.tif"), overwrite=T)
-    writeRaster(bootsRas3,  filename=paste0("outputs/Rasters/", disease, name, "wmean_unmasked.tif"), overwrite=T)
+    writeRaster(bootsRas2,  filename=paste0("outputs/Rasters/", disease, name, "IQR_unmasked", today, ".tif"), overwrite=T)
+    writeRaster(bootsRas3,  filename=paste0("outputs/Rasters/", disease, name, "wmean_unmasked", today, ".tif"), overwrite=T)
   } else {
     name = "eillance_map_"
-    writeRaster(bootsRas2,  filename=paste0("outputs/Rasters/", disease, name, "IQR.tif"), overwrite=T)
-    writeRaster(bootsRas3,  filename=paste0("outputs/Rasters/", disease, name, "wmean.tif"), overwrite=T)
+    writeRaster(bootsRas2,  filename=paste0("outputs/Rasters/", disease, name, "IQR", today, ".tif"), overwrite=T)
+    writeRaster(bootsRas3,  filename=paste0("outputs/Rasters/", disease, name, "wmean", today, ".tif"), overwrite=T)
 
   }
 

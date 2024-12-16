@@ -30,13 +30,14 @@ conflicts_prefer(
   base::intersect, base::union,
   .quiet = TRUE
 )
+
 pacman::p_load(pkgs, character.only = T)
 
 # Setting working directory
 setwd(here()) 
 
 # load functions
-# source("03_Functions/thinning.R")
+source("functions/fixNAs.R")
 source("functions/plotRaster.R")
 source("functions/thinning.R")
 source("functions/adminExtract.R")
@@ -62,6 +63,7 @@ names(admin) <- c("ad0", "ad1", "ad2")
 rm("ad0", "ad1", "ad2")
 
 
-# for plots
-windowsFonts("Arial" = windowsFont("Arial"))
-
+# Set font for Windows or Mac
+suppressWarnings(windowsFonts(Arial = windowsFont("Arial")))
+suppressWarnings(par(family = "Arial"))
+    

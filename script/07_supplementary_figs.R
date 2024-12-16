@@ -99,23 +99,104 @@ ggsave(filename = "outputs/Figures/SI_Fig3b.png", viPlot_surv[[2]], height=6, wi
 
 
 # SFig 4 ===================================================
+
+library(mgcv)
+library(gratia)
+library(scam)
+
+# load in intermediate dataset
+dat <- readRDS("data/intermediate_datasets/Surv_model_fit_data.rds")
+
+# names of covariates
+surv_cov_names <- c("GDP", "GDP_national", "Urban", "Acc_walk", "Acc_city", "Trmt", "U5M", "GovEff", "Physician")
+
+cov_mapping <- c(
+    "GDP" = "GDP",
+    "GDP_national" = "GDP (national)",
+    "Urban" = "Urbanisation", 
+    "Acc_walk" = "Travel time (health)", 
+    "Acc_city" = "Travel time (cities)", 
+    "Trmt" = "Treatment seeking", 
+    "U5M" = "Child mortality", 
+    "GovEff" = "Government effectiveness",
+    "Physician" = "Physicians density", 
+    "Tcold" = "Temperature of the coldest month", 
+    "Tsuit" = "Temperature suitability", 
+    "PRCP" = "Precipitation", 
+    "NDVI" = "NDVI", 
+    "DHI" = "DHI", 
+    "Aegypti" = "Aedes aegypti", 
+    "Albo" = "Aedes albopictus", 
+    "Pop" = "Population", 
+    "Hg" = "Haemagogus janthinomys", 
+    "NHP" = "NHP", 
+    "disease" = "Arbovirus disease"
+)
+ 
+
+plot_gam_spline <- function(df, cov_name) { 
+
+  if(cov_name %in% c("Acc_walk", "Acc_city", "U5M")) { 
+    dir = "'mpd'"
+  } else { dir = "'mpi'"}
+  
+  new_name <- cov_mapping[cov_name]
+  
+  labels <- ifelse(cov_name %in% names(cov_mapping), paste0(new_name), NA)
+  
+  formula <- as.formula(paste("PA ~ s(", cov_name, ", bs = ", paste0(dir), ")"))
+  mod <- scam(formula, data = df, family = "binomial")
+  
+  sm <- smooth_estimates(mod)%>%
+   add_confint()%>%
+   mutate(
+      prob_estimate = plogis(.estimate),
+      prob_lower_ci = plogis(.lower_ci),
+      prob_upper_ci = plogis(.upper_ci)
+    )
+
+  p1 <- sm |>
+    ggplot() +
+    geom_rug(aes(x = !!sym(cov_name)),
+      data = df,
+      sides = "b", length = grid::unit(0.02, "npc")
+    ) +
+    geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci, x = !!sym(cov_name)),
+      alpha = 0.2
+    ) +
+    geom_line(aes(x = !!sym(cov_name), y = .estimate), lwd = 1.2) +
+    labs(x = NULL, y = "Partial effect", title = paste0(labels))+
+    theme(text = element_text(size = 16))
+
+  return(p1)
+}
+
+SI_fig4 <- lapply(surv_cov_names, function(cov) {
+  plot_gam_spline(dat, cov_name = cov)
+})%>% wrap_plots()
+
+
+ggsave(filename = paste0("outputs/Figures/SI_Fig4.png"), SI_fig4, height = 9, width = 16, dpi=300)
+
+
+# SFig 5 ===================================================
 # IQR maps for surv model
 # load in IQR raster
 
 Ras <- raster("outputs/Rasters/Surveillance_map_IQR.tif")
 
-SI_fig4 <- plotRaster(Ras) + 
+SI_fig5 <- plotRaster(Ras) + 
     theme(legend.title = element_text(family = "Arial", vjust = 1))+
     scale_fill_viridis(option = "viridis", direction = 1, na.value="white", 
                        name= "Uncertainty")
 
-ggsave(filename = "outputs/Figures/SI_Fig4.png", SI_fig4, height=6, width=12, dpi=300)
+ggsave(filename = "outputs/Figures/SI_Fig4.png", SI_fig5, height=6, width=12, dpi=300)
 
-# SFig5 ====================================================
+# SFig 6 ====================================================
 # Overall and regionally-stratified model performance (surv model)
 # load in source data
 v_OOB_out <- readRDS("outputs/cross_validation/Surv_OOB_data.rds")
-AUC_Surv <- AUC_strata(v_OOB_out, "Surv") # calculate spatially stratified AUCs
+AUC_Surv <- AUC_strata(v_OOB_out, "Surv") # calculate spatially stratified AUCs and save as csv
 surv_tab <- AUC_Surv$tab
 
 surv_tab$Region <- factor(surv_tab$Region, levels = c("Overall", "Endemic", "Non-endemic", 
@@ -123,7 +204,7 @@ surv_tab$Region <- factor(surv_tab$Region, levels = c("Overall", "Endemic", "Non
                                                       "Europe", "Asia", "Oceania"))
 
 # visualise the AUC tables as heatmap
-SI_fig5 <- surv_tab %>%
+SI_fig6 <- surv_tab %>%
   gather(., metric, value, meanAUC:meanSpec, factor_key=TRUE)%>%
   filter(!Region %in% c("Endemic", "Non-endemic"))%>%
   ggplot()+
@@ -150,32 +231,32 @@ SI_fig5 <- surv_tab %>%
     na.value = "grey80",
     direction = 1,
     limits = c(0, 1)
-  ); surv_p
+  ); SI_fig6
 
 
-ggsave(filename = "outputs/Figures/SI_Fig5.png", SI_fig5, height=6, width=6, dpi=300, background = "white")
+ggsave(filename = "outputs/Figures/SI_Fig5.png", SI_fig6, height=6, width=6, dpi=300, background = "white")
 
-# SFig6 ====================================================
+# SFig 7 ====================================================
 # Spatial map of AUC (surv model)
 # load in source data
 v_OOB_out <- readRDS("outputs/cross_validation/Surv_OOB_data.rds")
 AUC_Surv <- AUC_strata(v_OOB_out, "Surv") # calculate spatially stratified AUCs
 
-ggsave(filename = "outputs/Figures/SI_Fig6.png", AUC_Surv$map, height=6, width=12, dpi=300, bg = "white")
+ggsave(filename = "outputs/Figures/SI_Fig7.png", AUC_Surv$map, height=6, width=12, dpi=300, bg = "white")
 
 
-# SFig7 ====================================================
+# SFig 8 ====================================================
 # variable importance and partial dependence plots for arbo model
 # load in variable importance and partial dependence values
 vi_arbo <- readRDS("outputs/cross_validation/Arbo_VI.rds")
 
 viPlot_arbo <- viPlot(vi_arbo)
 
-ggsave(filename = "outputs/Figures/SI_Fig7a.png", viPlot_arbo[[1]], height=6, width=9, dpi=300)
-ggsave(filename = "outputs/Figures/SI_Fig7b.png", viPlot_arbo[[2]], height=6, width=10, dpi=300)
+ggsave(filename = "outputs/Figures/SI_Fig8a.png", viPlot_arbo[[1]], height=6, width=9, dpi=300)
+ggsave(filename = "outputs/Figures/SI_Fig8b.png", viPlot_arbo[[2]], height=8, width=10, dpi=300)
 
 
-# SFig8 ====================================================
+# SFig 9 ====================================================
 # Model predicted environmental suitability for dengue, chikungunya, and zika seperately
 # load in rasters
 
@@ -210,14 +291,14 @@ SI_fig8 <- r_DEN + ggtitle("a  Dengue") +
                      name= "Environmental\nsuitability",
                      limits = c(0,1)); SI_fig8
 
-ggsave(filename = "outputs/Figures/SI_Fig8.png", SI_fig8, bg="white", height=10, width=10, dpi=300)
+ggsave(filename = "outputs/Figures/SI_Fig9.png", SI_fig9, bg="white", height=10, width=10, dpi=300)
 
 
-# SFig9 ====================================================
+# SFig 10 ====================================================
 # Sensitive analysis
 # comparison of model performance with and without disease-specific thermal suitability included as a covariate
 
-# SI_fig9a -------------------------------------------------
+# SI_fig10a -------------------------------------------------
 # visualise the AUC tables as heatmap
 
 base <- read.csv("outputs/cross_validation/SA_TCur_base_AUC_table.csv") # base model
@@ -273,14 +354,14 @@ for (metric in metrics) {
 
 } 
 
-SI_fig9a <- ggarrange(AUC_hm[["meanAUC"]], 
+SI_fig10a <- ggarrange(AUC_hm[["meanAUC"]], 
                    AUC_hm[["meanSens"]], 
                    AUC_hm[["meanSpec"]], 
                    ncol=3, nrow=1, 
                    common.legend = TRUE, 
-                   legend = "right"); SI_fig9a
+                   legend = "right"); SI_fig10a
 
-# SI_fig9b -------------------------------------------------
+# SI_fig10b -------------------------------------------------
 
 
 AUC_hm_d <- list()
@@ -320,15 +401,15 @@ for (dis in diseases) {
   AUC_hm_d[[dis]] <- p
 }
 
-SI_fig9b <- ggarrange(AUC_hm_d[["dengue"]], 
+SI_fig10b <- ggarrange(AUC_hm_d[["dengue"]], 
                    AUC_hm_d[["chikungunya"]], 
                    AUC_hm_d[["zika"]], 
                    ncol=3, nrow=1, 
                    common.legend = TRUE, 
-                   legend = "right"); SI_fig9b
+                   legend = "right"); SI_fig10b
 
 # Merge everything
-SI_fig9  <- ggarrange(SI_fig9a, SI_fig9b,
+SI_fig10  <- ggarrange(SI_fig10a, SI_fig10b,
                   ncol=1, nrow=2,
                   heights = c(0.4, 0.6),
                   common.legend = TRUE, 
@@ -336,10 +417,10 @@ SI_fig9  <- ggarrange(SI_fig9a, SI_fig9b,
                   align = "hv",
                   labels = c("a", "b")); all
 
-ggsave(filename = "outputs/Figures/SI_Fig9.png", SI_fig9, height=9, width=12, dpi=300, bg = "white")
+ggsave(filename = "outputs/Figures/SI_Fig10.png", SI_fig10, height=9, width=12, dpi=300, bg = "white")
 
 
-# SFig10 ====================================================
+# SFig11 ====================================================
 # Uncertainty maps for dengue, zika, chikungunya, yellow fever
 
 IQR_list <- list.files("outputs/Rasters", pattern = "*IQR_unmasked.tif", full.names = FALSE); IQR_list
@@ -369,10 +450,10 @@ SI_fig10 <- ggarrange(IQR_plot$DEN + theme(legend.key.width=unit(1,"cm")),
                      common.legend = TRUE, 
                      legend = "bottom")
 
-ggsave(filename = "outputs/Figures/SI_Fig10.png", SI_fig10, height=9, width=18, dpi=300, bg = "white")
+ggsave(filename = "outputs/Figures/SI_Fig11.png", SI_fig11, height=9, width=18, dpi=300, bg = "white")
 
 
-# SFig11 ====================================================
+# SFig12 ====================================================
 # Overall and regionally-stratified model performance for arbo and yf model
 
 # load in tables
@@ -434,10 +515,10 @@ SI_fig11 <- ggarrange(AUC_hm[["meanAUC"]],
                    common.legend = TRUE, 
                    legend = "right")
 
-ggsave(filename = "outputs/Figures/SI_Fig11.png", SI_fig11, height=6, width=12, dpi=300, bg = "white")
+ggsave(filename = "outputs/Figures/SI_Fig12.png", SI_fig12, height=6, width=12, dpi=300, bg = "white")
 
 
-# SFig12 ====================================================
+# SFig13 ====================================================
 # Overall and regionally-stratified model performance for arbo and yf model
 
 OOB_out <- readRDS("outputs/cross_validation/Arbo_OOB_data.rds")
@@ -456,24 +537,24 @@ AUC_yf <- AUC_strata(subset(yf_OOB_out, yf_OOB_out$disease == "yf"), "YF")
                       common.legend = TRUE, 
                       legend = "bottom"))
 
-ggsave(filename = "outputs/Figures/SI_Fig12.png", SI_fig12, height=9, width=18, dpi=300, bg = "white")
+ggsave(filename = "outputs/Figures/SI_Fig13.png", SI_fig13, height=9, width=18, dpi=300, bg = "white")
 
-# SFig13 ====================================================
+# SFig14 ====================================================
 # variable importance and partial dependence plots for yf model
 # load in variable importance and partial dependence values
 vi_yf <- readRDS("outputs/cross_validation/YF_VI.rds")
 
 viPlot_yf <- viPlot(vi_yf)
 
-ggsave(filename = "outputs/Figures/SI_Fig13a.png", viPlot_yf[[1]], height=6, width=9, dpi=300)
-ggsave(filename = "outputs/Figures/SI_Fig13b.png", viPlot_yf[[2]], height=6, width=10, dpi=300)
+ggsave(filename = "outputs/Figures/SI_Fig14a.png", viPlot_yf[[1]], height=6, width=9, dpi=300)
+ggsave(filename = "outputs/Figures/SI_Fig14b.png", viPlot_yf[[2]], height=8, width=10, dpi=300)
 
 
-# SFig14 ====================================================
+# SFig15 ====================================================
 # Sensitive analysis
 # comparison of model performance with and without disease-specific thermal suitability included as a covariate
 
-# SI_fig14a -------------------------------------------------  
+# SI_fig15a -------------------------------------------------  
 ras <- raster("outputs/cross_validation/SA_YF_noAe_riskmap_wmean_unmasked.tif")
 yf_eye <- raster("data/covariate_rasters/YF_EYE_mask.tif")
 mask_yf = yf_eye > 0 
@@ -486,7 +567,7 @@ SI_fig14a <- plotRaster(YF_range_mask)+
   coord_sf(xlim = c(-115, 65), ylim = c(-59, 38), expand = FALSE) 
 
 
-# SI_fig14b -------------------------------------------------  
+# SI_fig15b -------------------------------------------------  
 base <- read.csv("outputs/cross_validation/SA_YF_base_AUC_table.csv") # base model
 mod2 <- read.csv("outputs/cross_validation/SA_YF_noAe_AUC_table.csv") # without Aegypti included as a covariate
 
@@ -538,19 +619,19 @@ SI_fig14b <- ggplot(data=all_tab_long[all_tab_long$Region %in% c("Overall", "Sou
    facet_wrap(metrics~., nrow = 1, ncol = 3); SI_fig14b
  
 
-SI_fig14  <- ggarrange(SI_fig14a, SI_fig14b, 
+SI_fig15  <- ggarrange(SI_fig15a, SI_fig15b, 
                   ncol=1, nrow=2,
                   # heights = c(0.4, 0.6),
                   # common.legend = TRUE, 
                   legend = "right",
                   align = "hv",
-                  labels = c("a", "b")); SI_fig14
+                  labels = c("a", "b")); SI_fig15
 
 
-ggsave(filename = "outputs/Figures/SI_Fig14.png", SI_fig14, height=8, width=8, dpi=300, bg = "white")
+ggsave(filename = "outputs/Figures/SI_Fig15.png", SI_fig15, height=8, width=8, dpi=300, bg = "white")
 
 
-# SFig15 ====================================================
+# SFig16 ====================================================
 
 # covariates for surveillance model
 source("script/01_get_covariates.R")
@@ -611,9 +692,72 @@ for (name in all_names) {
 }
 
 names(plist)
-SI_fig15 <- wrap_plots(plist[1:9], ncol=2)
-SI_fig16 <- wrap_plots(plist[10:19], ncol=2)
+SI_fig16 <- wrap_plots(plist[1:9], ncol=2)
+SI_fig17 <- wrap_plots(plist[10:19], ncol=2)
 
-ggsave(filename = "outputs/Figures/SI_Fig15.png", SI_fig15, height = 18, width = 15, dpi=300)
 ggsave(filename = "outputs/Figures/SI_Fig16.png", SI_fig16, height = 18, width = 15, dpi=300)
+ggsave(filename = "outputs/Figures/SI_Fig17.png", SI_fig17, height = 18, width = 15, dpi=300)
 
+
+# SFig18 ====================================================
+# visualise masking layers
+# load in masking layers (temperature suitability and yf risk classification map)
+tsuit <- raster("data/covariate_rasters/Dengue_temperature_suitaiblity_masked_.tif")
+yf_eye <- raster("data/covariate_rasters/YF_EYE_mask.tif")
+
+# convert temperature suitability to 0-1 index
+# following: https://www.nature.com/articles/s41564-019-0476-8 
+tsuit = tsuit / max(as.vector(tsuit), na.rm = T)
+
+# temperature suitaiblity masking - 0.04 = 2 weeks of suitability = 1 serial interval
+mask_ts <- (tsuit > 0.04)
+mask_yf = yf_eye > 0 
+
+SI_fig18a <- plotRaster(mask_ts)+
+  scale_fill_viridis(na.value = "white", discrete = TRUE, na.translate = F, name = "Masking areas")
+  
+SI_fig18b <- plotRaster(mask_yf)+
+  scale_fill_viridis(na.value = "white", discrete = TRUE, na.translate = F, name = "Masking areas")  
+
+SI_fig18  <- ggarrange(SI_fig18a, SI_fig18b, 
+                  ncol=1, nrow=2,
+                  # heights = c(0.4, 0.6),
+                  common.legend = TRUE, 
+                  legend = "right",
+                  align = "hv",
+                  labels = c("a", "b")); SI_fig18
+
+
+ggsave(filename = "outputs/Figures/SI_Fig18.png", SI_fig18, height=10, width=12, dpi=300, bg = "white")
+
+
+# SFig19 ====================================================
+unmasked_list <- list.files("outputs/Rasters", pattern = "*wmean_unmasked.tif", full.names = FALSE); unmasked_list
+
+unmasked_plot <- list()
+for (i in 1:4) { 
+  Ras <- raster(paste0("outputs/Rasters/", unmasked_list[i]))
+  
+  disease_abb <- unlist(strsplit(names(Ras), "_"))[[1]] 
+  plot_dtitle <- ifelse(disease_abb=="DEN", "a  Dengue", 
+                        ifelse(disease_abb=="CHIK", 'b  Chikungunya', 
+                               ifelse(disease_abb=="ZIK", "c  Zika", "d  Yellow fever")))
+  
+  unmasked_plot[[disease_abb]] <- plotRaster(Ras) + 
+    theme(legend.title = element_text(family = "Arial", vjust = 1))+
+
+    scale_fill_viridis(option = "rocket", direction = -1, na.value="white", 
+                       name= "Environmental suitability (unmasked)")+
+    labs(title = plot_dtitle)
+  
+}
+
+SI_fig19 <- ggarrange(unmasked_plot$DEN + theme(legend.key.width=unit(1,"cm")), 
+                     unmasked_plot$CHIK, 
+                     unmasked_plot$ZIK, 
+                     unmasked_plot$YF, 
+                     ncol = 2, nrow = 2, 
+                     common.legend = TRUE, 
+                     legend = "bottom")
+
+ggsave(filename = "outputs/Figures/SI_Fig19.png", SI_fig19, height=9, width=18, dpi=300, bg = "white")

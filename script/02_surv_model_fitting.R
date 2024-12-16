@@ -4,8 +4,11 @@
 # 
 # ==========================================================
 
+path = "C:/Users/AhyoungLim/Dropbox/WORK/WHO_GAI/ENMs/Multi_arbo_mapping/"
+
 source("script/00_setup.R")
 source("script/01_get_covariates.R")
+
 # load in covariate rasters 
 surv_cov_list <- loadRasters("surv")[[1]]
 
@@ -70,9 +73,7 @@ stopCluster(cl)
 v_OOB_out <- OOBout(v_CV)  # get the out-of-bag samples
 saveRDS(v_OOB_out, file = "outputs/cross_validation/Surv_OOB_data.rds")
 
-AUC_Surv <- AUC_strata(v_OOB_out, "Surv") # returns a table and map of spatially stratified AUCs
-
-
+# AUC_Surv <- AUC_strata(v_OOB_out, "Surv") # returns a table and map of spatially stratified AUCs
 
 
 # Weighted average of predictions
@@ -103,4 +104,5 @@ vi_Surv <- foreach(df = vCV_splits$trainSet,
 stopCluster(cl)
 viPlot_surv <- viPlot(vi_Surv)
 
+saveRDS(vi_Surv, "outputs/cross_validation/Surv_VI.rds")
 

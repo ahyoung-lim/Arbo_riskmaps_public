@@ -190,9 +190,9 @@ ggsave(filename = "outputs/Figures/Fig3.png", fig3, bg="white", height=10, width
 
 # load in rasters
 DEN_ex <- raster("data/intermediate_datasets/DEN_previous_binrast.tif")
-CHIK_ex <- raster("data/intermediate_datasets/DEN_previous_binrast.tif")
-ZIK_ex <- raster("data/intermediate_datasets/DEN_previous_binrast.tif")
-YF_ex <- raster("data/intermediate_datasets/DEN_previous_binrast.tif")
+CHIK_ex <- raster("data/intermediate_datasets/CHIK_previous_binrast.tif")
+ZIK_ex <- raster("data/intermediate_datasets/ZIK_previous_binrast.tif")
+YF_ex <- raster("data/intermediate_datasets/YF_previous_binrast.tif")
 
 DEN_range_mask <- raster("outputs/Rasters/DEN_riskmap_wmean_masked.tif")
 CHIK_range_mask <- raster("outputs/Rasters/CHIK_riskmap_wmean_masked.tif")
