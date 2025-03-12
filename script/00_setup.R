@@ -1,40 +1,45 @@
-
 # Setup: packages formatting and directories ===============
 
 # Packages
-if(!require("pacman")) install.packages("pacman")
-if (!require("conflicted")) install.packages("conflicted") 
-
-pkgs = 
-  c(# data manipulation
-    "tidyr", "data.table","dplyr", "countrycode", "conflicted", "stringi", "lubridate",
+if (!require("pacman")) install.packages("pacman")
+if (!require("conflicted")) install.packages("conflicted")
+# fmt: skip
+pkgs =
+  c(
+    # data manipulation
+    "tidyr","data.table","dplyr","countrycode","conflicted",
+    "stringi","lubridate",
     # visualizations
-    "ggplot2", "patchwork", "ggpubr", "viridis", "ggtext", "glue", "extrafont", "tidyterra",
+    "ggplot2","patchwork","ggpubr","viridis","ggtext",
+    "glue","extrafont","tidyterra",
     # spatial data
-    "sf", "mapview", "exactextractr", "raster", "rnaturalearth", "terra", 
-    # modelling 
-    "randomForest", "rsample", "blockCV", 
-    "boot", "cutpointr", 
-    "Metrics", "pROC", "ROCR", "matrixStats", "pdp",
-    # programming 
-    "here", "tictoc", "doParallel"
-  ) 
+    "sf","mapview","exactextractr","raster","rnaturalearth",
+    "terra",
+    # modelling
+    "randomForest","rsample","blockCV","boot",
+    "cutpointr","Metrics","pROC","ROCR","matrixStats",
+    "pdp",
+    # programming
+    "here","tictoc","doParallel"
+  )
 
 conflicts_prefer(
   dplyr::filter,
   dplyr::mutate,
-  dplyr::select, 
-  raster::extract, ggplot2::margin,
+  dplyr::select,
+  raster::extract,
+  ggplot2::margin,
   pROC::roc,
   data.table::shift,
-  base::intersect, base::union,
+  base::intersect,
+  base::union,
   .quiet = TRUE
 )
 
 pacman::p_load(pkgs, character.only = T)
 
 # Setting working directory
-setwd(here()) 
+setwd(here())
 
 # load functions
 source("functions/fixNAs.R")
@@ -61,9 +66,3 @@ admin <- stack(
 )
 names(admin) <- c("ad0", "ad1", "ad2")
 rm("ad0", "ad1", "ad2")
-
-
-# Set font for Windows or Mac
-suppressWarnings(windowsFonts(Arial = windowsFont("Arial")))
-suppressWarnings(par(family = "Arial"))
-    
